@@ -4,19 +4,18 @@ library(readr)
 library(stringr)
 library(reshape)
 
+
+mflist = c('care', 'fairness', 'ingroup', 'authority', 'purity')
+
 dataprocess = function(filename, mf){
   data <- t(read.csv(paste0("result/docvec/", filename, ".csv"), header = T, row.names = 1, check.names = F))
   data <- data[complete.cases(data),]
   
   me <- data[,str_detect(colnames(data), 'mean')]
-  colnames(me) = c('carevirtue', 'carevice', 'fairnessvirtue', 'fairnessvice', 
-                   'ingroupvirtue', 'ingroupvice', 'authorityvirtue', 'authorityvice',
-                   'purityvirtue', 'purityvice')
+  colnames(me) = mflist
   
   se <- data[,str_detect(colnames(data), 'se')]
-  colnames(se) = c('carevirtue', 'carevice', 'fairnessvirtue', 'fairnessvice', 
-                   'ingroupvirtue', 'ingroupvice', 'authorityvirtue', 'authorityvice',
-                   'purityvirtue', 'purityvice')
+  colnames(se) = mflist
   
   meandata = melt(me, id.vars = 'time')
   sedata = melt(se, id.vars = 'time')
@@ -30,10 +29,7 @@ dataprocess = function(filename, mf){
   return(meanse)
 }
 
-mf = c('carevirtue', 'carevice', 'fairnessvirtue', 'fairnessvice', 
-       'ingroupvirtue', 'ingroupvice', 'authorityvirtue', 'authorityvice',
-       'purityvirtue', 'purityvice')
-for(i in mf){
+for(i in mflist){
   data = rbind(dataprocess('Conservative', i), dataprocess('Liberal', i))
   colnames(data) = c('time', 'party', 'mean', 'se')
   
@@ -56,7 +52,7 @@ for(i in mf){
           axis.ticks.x = element_blank()) +
     labs(list(title = toupper(i),
               x = 'Period(Year)', 
-              y = 'Proportion of the MFD Words')) +
+              y = 'Cosine Similarity to the MFD words')) +
     guides(fill=guide_legend(title="Party"))
   
   ggsave(paste0('result/docvec/', i, '.jpg'), width = 20, height = 10, units = 'cm')

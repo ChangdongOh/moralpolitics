@@ -1,4 +1,4 @@
-9# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Fri Jul  7 00:15:15 2017
 
@@ -46,7 +46,8 @@ rep = [["[가-힣]{2,4} 대변인|([가-힣]\s{1,3}){3}대변인|굴림", " "],
           "통합 민주당|열린우리당|대통합민주신당|통합신당|"
           "민주통합당|민통당|열린 우리당|새정치민주연합|더민주|"
           "더불어민주당|더불어 민주당|새민연|새민련|야당"), ' 민주당 '],
-        ["한나라당|여당|한당", " 새누리당 "]]
+        ["한나라당|여당|한당", " 새누리당 "],
+        ["따르면|드린다|들이|다음과 같이|굴림|하니|오니", " "]]
 
 
 def preprocess(t, rules=rep):
@@ -57,7 +58,7 @@ def preprocess(t, rules=rep):
     return t
 
 
-def Tagged(year, party):
+def Tagged(year, party, opparty):
     print(party, str(year))
     tagged_docs = []
 
@@ -79,8 +80,7 @@ def Tagged(year, party):
         data['article'] = preprocess(data['article'], rules=[["자당", "민주당"],
                                      ["우리당|우리 당|저희 당|저희당", "새누리당"]])
 
-    newrule = [["따르면|드린다|들이|다음과 같이|굴림", " "]]
-    data['article'] = [preprocess(pos(i), newrule) for i in data['article']]
+    data['article'] = [preprocess(pos(i)) for i in data['article']]
 
     for i in range(0, len(data)):
         doc = data.ix[i]
@@ -98,21 +98,23 @@ def Tagged(year, party):
 
 total_docs = []
 for year in range(2008, 2017):
-    total_docs += Tagged(year, '새누리')+Tagged(year, '민주')
+    total_docs += Tagged(year, '새누리', '민주') + Tagged(year, '민주', '새누리')
 
-with open('moralpolitics/data/taggeddoc.txt', 'wb') as p:
+with open('moralpolitics/data/taggeddocmonthly.txt', 'wb') as p:
     pickle.dump(total_docs, p)
 '''
 with open('moralpolitics/data/taggeddoc.txt', 'rb') as p:
     total_docs = pickle.load(p)
 '''
 
-
+MFDictionary = ['HarmVirtue', 'HarmVice', 'FairnessVirtue', 'FairnessVice',
+                'IngroupVirtue', 'IngroupVice', 'AuthorityVirtue',
+                'AuthorityVice', 'PurityVirtue', 'PurityVice']
 
 for i in MFDictionary:
     wordlist = []
     for j in read_mfd('moralpolitics/data/mfd/{0}.csv'.format(i)):
-        print(pos(j))
+        print(j, pos(j))
         Morp = pos(j)[0]
         wordlist.append(Morp)
     exec("%s=%s" % (i, unique_list(wordlist))) 
@@ -141,7 +143,7 @@ def mffreq(total_docs, party):
                     freq[mf].append(sum([count[word]/len(words) for word in wordlist]))
             meanse = [[np.mean(freq[mf]), stats.sem(freq[mf])] for mf in range(0, 5)]
             totalfreq[str(year) + '-' + month] = [j for i in meanse for j in i]
-    
+
     totalfreq = pd.DataFrame(totalfreq, index=['Caremean', 'Carese',
                                                'Fairnessmean', 'Fairnessse',
                                                'Ingroupmean', 'Ingroupse',
